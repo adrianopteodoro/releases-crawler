@@ -1,6 +1,4 @@
-'''
-    Releases web pylintcrawler
-'''
+# -*- coding: utf-8 -*-
 import logging
 from datetime import datetime
 
@@ -48,13 +46,20 @@ class ReleasesSpider(CrawlSpider):
                     month=int(current_month + x)
                 )
             )
-        self.log.info('start_urls: %s', '\x20'.join(start_urls))
+        self.log.info('start_urls:\n%s', '\n'.join(start_urls))
         return start_urls
+
+    def get_xpathstring(self, response, xpath_str, str_sep='\x20'):
+        return str_sep.join(response.xpath(xpath_str).extract())
 
     def parse_links(self, response):
         try:
             self.log.info('url: %s', response.url)
-            i = ReleasescrawlerItem()
-            return i
+            name = self.get_xpathstring(
+                response, '//*[contains(@itemprop, \'name\')]/text()'
+            )
+            item = ReleasescrawlerItem()
+            item['name'] = name
+            yield item
         except ReleasesException as ex:
             self.log.exception('%s', ex)
