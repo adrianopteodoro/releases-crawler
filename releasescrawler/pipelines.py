@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
+import logging
+import json
 
 
 class ReleasescrawlerPipeline():
+    def __init__(self):
+        self.log = logging.getLogger('pipeline')
+
     def process_item(self, item, spider):
+        self.log.info(
+            'fromSpider: %s, item:\n%s',
+            spider.name,
+            json.dumps(dict(item), sort_keys=True, indent=4)
+        )
         return item
