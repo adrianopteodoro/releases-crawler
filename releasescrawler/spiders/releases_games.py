@@ -11,12 +11,12 @@ from scrapy.spiders import CrawlSpider, Rule
 from releasescrawler.items import ReleasescrawlerItem
 
 
-class ReleasesException(Exception):
+class ReleasesGamesException(Exception):
     pass
 
 
-class ReleasesSpider(CrawlSpider):
-    name = 'releases'
+class ReleasesGamesSpider(CrawlSpider):
+    name = 'releases_games'
     allowed_domains = ['releases.com']
     restricted_xpaths = [
         '//*[contains(@class,\'calendar-item-title subpage-trigg\')]'
@@ -36,7 +36,7 @@ class ReleasesSpider(CrawlSpider):
     def __init__(self, *a, **kw):
         self.log = logging.getLogger(self.name)
         self.start_urls = self.get_start_urls()
-        super(ReleasesSpider, self).__init__(*a, **kw)
+        super(ReleasesGamesSpider, self).__init__(*a, **kw)
 
     def get_start_urls(self):
         start_urls = []
@@ -110,5 +110,5 @@ class ReleasesSpider(CrawlSpider):
                 )
                 item['rid'] = hashlib.sha256(str.encode(rid)).hexdigest()
                 yield item
-        except ReleasesException as ex:
+        except ReleasesGamesException as ex:
             self.log.exception('%s', ex)
