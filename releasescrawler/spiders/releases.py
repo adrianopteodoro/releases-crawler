@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import hashlib
 import logging
+import re
 from datetime import datetime
 
 from scrapy.linkextractors import LinkExtractor
+from scrapy.selector import Selector
 from scrapy.spiders import CrawlSpider, Rule
 
 from releasescrawler.items import ReleasescrawlerItem
@@ -49,17 +52,63 @@ class ReleasesSpider(CrawlSpider):
         self.log.info('start_urls:\n%s', '\n'.join(start_urls))
         return start_urls
 
-    def get_xpathstring(self, response, xpath_str, str_sep='\x20'):
-        return str_sep.join(response.xpath(xpath_str).extract())
+    def get_xpathstring(self, content, xpath_str, str_sep='\x20'):
+        return str_sep.join(content.xpath(xpath_str).extract()).strip()
+
+    def get_countryfromflag(self, content_path):
+        regex = r'.*\-([a-zA-Z]+)\..*'
+        found = re.findall(regex, content_path)
+        return ''.join(found)
 
     def parse_links(self, response):
         try:
-            self.log.info('url: %s', response.url)
             name = self.get_xpathstring(
                 response, '//*[contains(@itemprop, \'name\')]/text()'
             )
-            item = ReleasescrawlerItem()
-            item['name'] = name
-            yield item
+            description = self.get_xpathstring(
+                response, '//*[contains(@itemprop, \'description\')]/text()'
+            )
+            tags = response.xpath(
+                '//*[contains(@class, \'p-details-tags\')]/li/a/text()'
+            ).extract()
+            trackings = response.xpath(
+                '//*[contains(@class, \'rl-row rl-tracking\')]'
+            ).extract()
+            for track in trackings:
+                item = ReleasescrawlerItem()
+                track_element = Selector(text=track)
+                release_flag = self.get_xpathstring(
+                    track_element,
+                    '//*[contains(@class, \'date-region-flag\')]'
+                )
+                item['name'] = name
+                item['description'] = description
+                item['tags'] = tags
+                item['release_version'] = self.get_xpathstring(
+                    track_element,
+                    '//*[contains(@class, \'rl-row rl-tracking\')]/@data-version-id'
+                )
+                item['release_country'] = self.get_countryfromflag(
+                    release_flag
+                )
+                item['release_platform'] = self.get_xpathstring(
+                    track_element,
+                    '//*[contains(@class, \'version\')]/text()'
+                )
+                item['release_date'] = self.get_xpathstring(
+                    track_element,
+                    '//*[contains(@class, \'date-details\')]/span[contains(@class, \'date\')]/text()'
+                )
+                item['release_status'] = self.get_xpathstring(
+                    track_element,
+                    '//*[contains(@class, \'date-details\')]/span[contains(@class, \'status\')]/text()'
+                )
+                rid = '{name}:{platform}:{country}'.format(
+                    name=name,
+                    platform=item['release_platform'],
+                    country=item['release_country']
+                )
+                item['rid'] = hashlib.sha256(str.encode(rid)).hexdigest()
+                yield item
         except ReleasesException as ex:
             self.log.exception('%s', ex)
