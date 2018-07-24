@@ -3,7 +3,7 @@ import scrapy
 
 
 class ReleasescrawlerItem(scrapy.Item):
-    rid = scrapy.Field()
+    _id = scrapy.Field()
     name = scrapy.Field()
     description = scrapy.Field()
     tags = scrapy.Field()
