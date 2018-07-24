@@ -108,7 +108,7 @@ class ReleasesGamesSpider(CrawlSpider):
                     platform=item['release_platform'],
                     country=item['release_country']
                 )
-                item['rid'] = hashlib.sha256(str.encode(rid)).hexdigest()
+                item['_id'] = hashlib.sha256(str.encode(rid)).hexdigest()
                 yield item
         except ReleasesGamesException as ex:
             self.log.exception('%s', ex)
