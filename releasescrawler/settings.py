@@ -25,3 +25,11 @@ ITEM_PIPELINES = {
 
 LOG_LEVEL = 'INFO'
 # LOG_LEVEL = 'DEBUG'
+
+# Custom settings
+MONGODB = {
+    'username': os.getenv('MONGODB_USER').strip('\n'),
+    'password': os.getenv('MONGODB_PWD').strip('\n'),
+    'database': os.getenv('MONGODB_DATABASE').strip('\n'),
+    'url': os.getenv('MONGODB_URL').strip('\n'),
+}
