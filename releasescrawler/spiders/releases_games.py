@@ -112,9 +112,9 @@ class ReleasesGamesSpider(CrawlSpider):
                 if item[7] != '' else None
             day = item[3] if item[3] != '' else None
             if year:
-                date_obj.update({'year': year})
+                date_obj.update({'year': int(year)})
             if day:
-                date_obj.update({'day': day})
+                date_obj.update({'day': int(day)})
             if month:
                 date_obj.update({'months': [month]})
             if not month and year:
