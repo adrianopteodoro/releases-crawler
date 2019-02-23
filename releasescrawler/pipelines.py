@@ -73,12 +73,13 @@ class ReleasescrawlerPipeline():
 
     def print_item(self, item, spider):
         self.log.info(
-            'fromSpider: %s [%s, %s, %s, %s, %s]',
+            'fromSpider: %s [%s, %s, %s, %s, %s, %s]',
             spider.name,
             item['name'],
             item['release_platform'],
             item['release_country'],
             item['release_date'],
+            item['release_date_string'],
             item['release_status']
         )
 

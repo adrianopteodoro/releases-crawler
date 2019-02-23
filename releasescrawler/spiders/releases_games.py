@@ -21,6 +21,32 @@ class ReleasesGamesSpider(CrawlSpider):
     restricted_xpaths = [
         '//*[contains(@class,\'calendar-item-title subpage-trigg\')]'
     ]
+    months_ref = {
+        'january': 1,
+        'february': 2,
+        'march': 3,
+        'april': 4,
+        'may': 5,
+        'june': 6,
+        'july': 7,
+        'august': 8,
+        'september': 9,
+        'october': 10,
+        'november': 11,
+        'december': 12,
+    }
+    quarter_ref = {
+        'q1': 1,
+        'q2': 2,
+        'q3': 3,
+        'q4': 4,
+    }
+    quarter_months_ref = {
+        1: [1, 2, 3],
+        2: [4, 5, 6],
+        3: [7, 8, 9],
+        4: [10, 11, 12],
+    }
 
     rules = (
         Rule(
@@ -60,6 +86,47 @@ class ReleasesGamesSpider(CrawlSpider):
         found = re.findall(regex, content_path)
         return ''.join(found)
 
+    @staticmethod
+    def get_quarter_month(month):
+        if month in [1, 2, 3]:
+            return 1
+        if month in [4, 5, 6]:
+            return 2
+        if month in [7, 8, 9]:
+            return 3
+        if month in [10, 11, 12]:
+            return 4
+
+    def get_date_object(self, date_string):
+        datestring_regex = r'(Q[0-9])\x20+([0-9]{4})|'\
+            r'([A-Za-z]+)\x20+([0-9]{1,2})\,\x20+([0-9]{4})|'\
+            r'([A-Za-z]+)\x20+([0-9]{4})|([0-9]{4})'
+        founds = re.findall(datestring_regex, date_string)
+        date_obj = {}
+        for item in founds:
+            quarter = self.quarter_ref.get(item[0].lower())
+            month_str = item[2] if item[2] != '' else item[5]
+            month = self.months_ref.get(month_str.lower())
+            year = item[1] if item[1] != '' else item[4]\
+                if item[4] != '' else item[6] if item[6] != '' else item[7]\
+                if item[7] != '' else None
+            day = item[3] if item[3] != '' else None
+            if year:
+                date_obj.update({'year': year})
+            if day:
+                date_obj.update({'day': day})
+            if month:
+                date_obj.update({'months': [month]})
+            if not month and year:
+                date_obj.update(
+                    {'months': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]})
+            if quarter:
+                date_obj.update(
+                    {'quarter': quarter, 'months': self.quarter_months_ref.get(quarter)})
+            if not quarter and month:
+                date_obj.update({'quarter': self.get_quarter_month(month)})
+        return date_obj
+
     def parse_links(self, response):
         try:
             name = self.get_xpathstring(
@@ -95,10 +162,13 @@ class ReleasesGamesSpider(CrawlSpider):
                     track_element,
                     '//*[contains(@class, \'version\')]/text()'
                 )
-                item['release_date'] = self.get_xpathstring(
+                release_date_string = self.get_xpathstring(
                     track_element,
                     '//*[contains(@class, \'date-details\')]/span[contains(@class, \'date\')]/text()'
                 )
+                item['release_date_string'] = release_date_string
+                item['release_date'] = self.get_date_object(
+                    release_date_string)
                 item['release_status'] = self.get_xpathstring(
                     track_element,
                     '//*[contains(@class, \'date-details\')]/span[contains(@class, \'status\')]/text()'
